@@ -14,20 +14,54 @@ from datetime import datetime
 import random
 from typing import Union
 
+import py3_requests
 import requests
 from addict import Dict
 from jsonschema.validators import Draft202012Validator
 from requests import Response
 
 
-class SMS(object):
+class ReqeustUrl:
+    BASE_URL: str = "https://api.51welink.com/"
+    SEND_SMS_URL: str = "/EncryptionSubmit/SendSms.ashx"
+
+
+class ValidatorJsonSchema:
+    """
+    json schema settings
+    """
+    NORMAL_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "Result": {"type": "string", "const": "succ"},
+        },
+        "required": ["Result"]
+    }
+
+
+class ResponseHandler:
+    """
+    response handler
+    """
+
+    @staticmethod
+    def normal_handler(response: Response = None):
+        if isinstance(response, Response) and response.status_code == 200:
+            json_addict = Dict(response.json())
+            if Draft202012Validator(ValidatorJsonSchema.NORMAL_SCHEMA).is_valid(instance=json_addict):
+                return True
+            return False
+        raise Exception(f"Response Handler Error {response.status_code}|{response.text}")
+
+
+class Sms(object):
     """
     @see https://www.lmobile.cn/ApiPages/index.html
     """
 
     def __init__(
             self,
-            base_url: str = "https://api.51welink.com/",
+            base_url: str = ReqeustUrl.BASE_URL,
             account_id: str = "",
             password: str = "",
             product_id: Union[int, str] = 0,
@@ -41,32 +75,11 @@ class SMS(object):
         :param product_id:
         :param smms_encrypt_key:
         """
-        base_url = base_url if isinstance(base_url, str) else "https://qyapi.weixin.qq.com/"
-        if base_url.endswith("/"):
-            base_url = base_url[:-1]
-        self.base_url = base_url
-        self.account_id = account_id if isinstance(account_id, str) else ""
-        self.password = password if isinstance(password, str) else ""
-        self.product_id = product_id if isinstance(product_id, (int, str)) else 0
-        self.smms_encrypt_key = smms_encrypt_key if isinstance(smms_encrypt_key, str) else ""
-
-    def _default_response_handler(self, response: Response = None):
-        """
-        default response handler
-        :param response: requests.Response instance
-        :return:
-        """
-        if isinstance(response, Response) and response.status_code == 200:
-            json_addict = Dict(response.json())
-            if Draft202012Validator({
-                "type": "object",
-                "properties": {
-                    "Result": {"type": "string", "const": "succ"},
-                },
-                "required": ["Result"]
-            }).is_valid(json_addict):
-                return True, response
-        return False, response
+        self.base_url = base_url[:-1] if base_url.endswith("/") else base_url
+        self.account_id = account_id
+        self.password = password
+        self.product_id = product_id
+        self.smms_encrypt_key = smms_encrypt_key
 
     def timestamp(self):
         return int(datetime.now().timestamp())
@@ -78,7 +91,7 @@ class SMS(object):
         return hashlib.md5(f"{self.password}{self.smms_encrypt_key}".encode('utf-8')).hexdigest()
 
     def sha256_signature(self, data: dict = {}):
-        data = data if isinstance(data, dict) else dict()
+        data = Dict(data)
         data.setdefault("AccountId", self.account_id)
         data.setdefault("Timestamp", self.timestamp())
         data.setdefault("Random", self.random_digits())
@@ -98,33 +111,25 @@ class SMS(object):
             self,
             phone_nos: str = None,
             content: str = None,
-            method: str = "POST",
-            url: str = "/EncryptionSubmit/SendSms.ashx",
             **kwargs
     ):
         """
         @see https://www.lmobile.cn/ApiPages/index.html
         :param phone_nos:
         :param content:
-        :param method:
-        :param url:
         :param kwargs:
         :return:
         """
-        method = method if isinstance(method, str) else "POST"
-        url = url if isinstance(url, str) else "/EncryptionSubmit/SendSms.ashx"
-        if not url.startswith("http"):
-            if not url.startswith("/"):
-                url = f"/{url}"
-            url = f"{self.base_url}{url}"
-        data = kwargs.get("data", {})
-        data.setdefault("AccountId", self.account_id)
-        data.setdefault("Timestamp", self.timestamp())
-        data.setdefault("Random", self.random_digits())
-        data.setdefault("ProductId", self.product_id)
-        data.setdefault("PhoneNos", phone_nos)
-        data.setdefault("Content", content)
-        data.setdefault("AccessKey", self.sha256_signature(data))
-        kwargs["data"] = data
-        response = requests.request(method=method, url=url, **kwargs)
-        return self._default_response_handler(response)
+        kwargs = Dict(kwargs)
+        kwargs.setdefault("method", "POST")
+        kwargs.setdefault("url", f"{self.base_url}{ReqeustUrl.SEND_SMS_URL}")
+        kwargs.setdefault("data", Dict())
+
+        kwargs.data.setdefault("AccountId", self.account_id)
+        kwargs.data.setdefault("Timestamp", self.timestamp())
+        kwargs.data.setdefault("Random", self.random_digits())
+        kwargs.data.setdefault("ProductId", self.product_id)
+        kwargs.data.setdefault("PhoneNos", phone_nos)
+        kwargs.data.setdefault("Content", content)
+        kwargs.data.setdefault("AccessKey", self.sha256_signature(kwargs.data))
+        return py3_requests.request(**kwargs.to_dict())

@@ -12,14 +12,13 @@ pip install py3_lmobile
 # Example
 ## SMS
 ```python
-from py3_lmobile.sms import SMS
+from py3_lmobile.sms import Sms
 
-sms = SMS(
-    account_id="<AccountId>",
-    password="<Password>",
-    product_id="<ProductId>"
+sms = Sms(
+    account_id="dljtwy00",
+    password="g07KjuLN1",
+    product_id=1012808
 )
-state, _ = sms.send_sms(phone_nos="<phone_no1,phone_no2>", content="【签名】短信内容")
-if state:
-    print("successful")
+state = sms.send_sms(phone_nos="15210720528,18910415280", content="【金泰物业】测试通知短信")
+print(state)
 ```

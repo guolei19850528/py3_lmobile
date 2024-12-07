@@ -17,7 +17,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 setup(
     name="py3-lmobile",
-    version="1.0.0",
+    version="1.1.0",
     description="The Python3 lmobile Library Developed By Guolei",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -25,10 +25,10 @@ setup(
     author="guolei",
     author_email="174000902@qq.com",
     license="MIT",
-    keywors=["lmobile", "微网通联", "短信", "验证码"],
+    keywors=["lmobile", "微网通联", "短信", "验证码", "guolei", "郭磊"],
     packages=setuptools.find_packages('./'),
     install_requires=[
-        "requests",
+        "py3-requests",
         "addict",
         "retrying",
         "jsonschema",
