@@ -122,7 +122,9 @@ class Sms(object):
         """
         kwargs = Dict(kwargs)
         kwargs.setdefault("method", "POST")
-        kwargs.setdefault("url", f"{self.base_url}{ReqeustUrl.SEND_SMS_URL}")
+        kwargs.setdefault("url", ReqeustUrl.SEND_SMS_URL)
+        if not kwargs.get("url", "").startswith("http"):
+            kwargs["url"] = self.base_url + kwargs["url"]
         kwargs.setdefault("data", Dict())
 
         kwargs.data.setdefault("AccountId", self.account_id)
