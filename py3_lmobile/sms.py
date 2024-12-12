@@ -20,6 +20,10 @@ from addict import Dict
 from jsonschema.validators import Draft202012Validator
 from requests import Response
 
+request_urls = Dict()
+request_urls.base = "https://api.51welink.com/"
+request_urls.send_sms = "/EncryptionSubmit/SendSms.ashx"
+
 validator_json_schema = Dict()
 validator_json_schema.normal = Dict({
     "type": "object",
@@ -46,7 +50,7 @@ class Sms(object):
 
     def __init__(
             self,
-            base_url: str = "https://api.51welink.com/",
+            base_url: str = request_urls.base,
             account_id: str = "",
             password: str = "",
             product_id: Union[int, str] = 0,
@@ -108,11 +112,10 @@ class Sms(object):
         kwargs = Dict(kwargs)
         kwargs.setdefault("response_handler", normal_response_handler)
         kwargs.setdefault("method", "POST")
-        kwargs.setdefault("url", f"/EncryptionSubmit/SendSms.ashx")
+        kwargs.setdefault("url", request_urls.send_sms)
         if not kwargs.get("url", "").startswith("http"):
             kwargs["url"] = self.base_url + kwargs["url"]
         kwargs.setdefault("data", Dict())
-
         kwargs.data.setdefault("AccountId", self.account_id)
         kwargs.data.setdefault("Timestamp", self.timestamp())
         kwargs.data.setdefault("Random", self.random_digits())
