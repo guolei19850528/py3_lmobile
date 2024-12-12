@@ -20,38 +20,23 @@ from addict import Dict
 from jsonschema.validators import Draft202012Validator
 from requests import Response
 
-
-class ReqeustUrl:
-    BASE_URL: str = "https://api.51welink.com/"
-    SEND_SMS_URL: str = "/EncryptionSubmit/SendSms.ashx"
-
-
-class ValidatorJsonSchema:
-    """
-    json schema settings
-    """
-    NORMAL_SCHEMA = {
-        "type": "object",
-        "properties": {
-            "Result": {"type": "string", "const": "succ"},
-        },
-        "required": ["Result"]
-    }
+validator_json_schema = Dict()
+validator_json_schema.normal = Dict({
+    "type": "object",
+    "properties": {
+        "Result": {"type": "string", "const": "succ"},
+    },
+    "required": ["Result"]
+})
 
 
-class ResponseHandler:
-    """
-    response handler
-    """
-
-    @staticmethod
-    def normal_handler(response: Response = None):
-        if isinstance(response, Response) and response.status_code == 200:
-            json_addict = Dict(response.json())
-            if Draft202012Validator(ValidatorJsonSchema.NORMAL_SCHEMA).is_valid(instance=json_addict):
-                return True
-            return False
-        raise Exception(f"Response Handler Error {response.status_code}|{response.text}")
+def normal_response_handler(response: Response = None):
+    if isinstance(response, Response) and response.status_code == 200:
+        json_addict = Dict(response.json())
+        if Draft202012Validator(validator_json_schema.normal).is_valid(instance=json_addict):
+            return True
+        return False
+    raise Exception(f"Response Handler Error {response.status_code}|{response.text}")
 
 
 class Sms(object):
@@ -61,7 +46,7 @@ class Sms(object):
 
     def __init__(
             self,
-            base_url: str = ReqeustUrl.BASE_URL,
+            base_url: str = "https://api.51welink.com/",
             account_id: str = "",
             password: str = "",
             product_id: Union[int, str] = 0,
@@ -121,8 +106,9 @@ class Sms(object):
         :return:
         """
         kwargs = Dict(kwargs)
+        kwargs.setdefault("response_handler", normal_response_handler)
         kwargs.setdefault("method", "POST")
-        kwargs.setdefault("url", ReqeustUrl.SEND_SMS_URL)
+        kwargs.setdefault("url", f"/EncryptionSubmit/SendSms.ashx")
         if not kwargs.get("url", "").startswith("http"):
             kwargs["url"] = self.base_url + kwargs["url"]
         kwargs.setdefault("data", Dict())
