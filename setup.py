@@ -17,7 +17,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 setup(
     name="py3-lmobile",
-    version="1.1.5",
+    version="1.1.6",
     description="The Python3 lmobile Library Developed By Guolei",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -34,6 +34,8 @@ setup(
         "jsonschema",
         "diskcache",
         "redis",
+        "setuptools",
+        "wheel",
     ],
     python_requires='>=3.0',
     zip_safe=False
