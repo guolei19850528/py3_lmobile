@@ -20,27 +20,29 @@ from addict import Dict
 from jsonschema.validators import Draft202012Validator
 from requests import Response
 
-request_urls = Dict()
-request_urls.base = "https://api.51welink.com/"
-request_urls.send_sms = "/EncryptionSubmit/SendSms.ashx"
 
-validator_json_schema = Dict()
-validator_json_schema.normal = Dict({
-    "type": "object",
-    "properties": {
-        "Result": {"type": "string", "const": "succ"},
-    },
-    "required": ["Result"]
-})
+class RequestUrl(py3_requests.RequestUrl):
+    BASE = "https://api.51welink.com/"
+    SEND_SMS = "/EncryptionSubmit/SendSms.ashx"
 
 
-def normal_response_handler(response: Response = None):
-    if isinstance(response, Response) and response.status_code == 200:
-        json_addict = Dict(response.json())
-        if Draft202012Validator(validator_json_schema.normal).is_valid(instance=json_addict):
+class ValidatorJsonSchema(py3_requests.ValidatorJsonSchema):
+    SUCCESS = Dict({
+        "type": "object",
+        "properties": {
+            "Result": {"type": "string", "const": "succ"},
+        },
+        "required": ["Result"]
+    })
+
+
+class ResponseHandler(py3_requests.ResponseHandler):
+    @staticmethod
+    def success(response: Response = None):
+        json_addict = ResponseHandler.status_code_200_json_addict(response=response)
+        if Draft202012Validator(ValidatorJsonSchema.SUCCESS).is_valid(instance=json_addict):
             return True
         return False
-    raise Exception(f"Response Handler Error {response.status_code}|{response.text}")
 
 
 class Sms(object):
@@ -50,7 +52,7 @@ class Sms(object):
 
     def __init__(
             self,
-            base_url: str = request_urls.base,
+            base_url: str = RequestUrl.BASE,
             account_id: str = "",
             password: str = "",
             product_id: Union[int, str] = 0,
@@ -110,9 +112,9 @@ class Sms(object):
         :return:
         """
         kwargs = Dict(kwargs)
-        kwargs.setdefault("response_handler", normal_response_handler)
+        kwargs.setdefault("response_handler", ResponseHandler.success)
         kwargs.setdefault("method", "POST")
-        kwargs.setdefault("url", request_urls.send_sms)
+        kwargs.setdefault("url", RequestUrl.SEND_SMS)
         if not kwargs.get("url", "").startswith("http"):
             kwargs["url"] = self.base_url + kwargs["url"]
         kwargs.setdefault("data", Dict())
