@@ -113,7 +113,7 @@ class Sms(object):
         """
         kwargs = Dict(kwargs)
         kwargs.setdefault("response_handler", ResponseHandler.success)
-        kwargs.setdefault("method", "POST")
+        kwargs.setdefault("method", py3_requests.RequestMethod.POST)
         kwargs.setdefault("url", RequestUrl.SEND_SMS)
         if not kwargs.get("url", "").startswith("http"):
             kwargs["url"] = self.base_url + kwargs["url"]
